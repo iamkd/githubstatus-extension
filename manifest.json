@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Github Status Monitor",
+  "description": "View Github status on every page because it's down too often.",
+  "version": "1.0",
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "run_at": "document_idle",
+      "css": ["styles.css"],
+      "js": ["contentScript.js"]
+    }
+  ]
+}

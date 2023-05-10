@@ -1,0 +1,68 @@
+.githubstatus-extension-link {
+  display: none;
+  visibility: hidden;
+  align-self: center;
+  align-items: center;
+}
+
+.githubstatus-extension-link.padded {
+  margin: 0 16px;
+}
+
+.githubstatus-extension-link:hover {
+  text-decoration: none;
+}
+
+.githubstatus-extension-link.visible {
+  visibility: visible;
+}
+
+.githubstatus-extension-text {
+  display: none;
+}
+
+.githubstatus-extension-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #7d8590;
+}
+
+.githubstatus-extension-icon.none {
+  background: #28a745;
+}
+
+.githubstatus-extension-icon.minor {
+  background: #9e6a03;
+}
+
+.githubstatus-extension-icon.major {
+  background: #f85149;
+}
+
+@media (min-width: 768px) {
+  .githubstatus-extension-link {
+    display: inline-flex;
+  }
+
+  .githubstatus-extension-link > button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+@media (min-width: 1152px) {
+  .githubstatus-extension-icon {
+    margin-right: 8px;
+  }
+
+  .githubstatus-extension-text {
+    display: inline;
+  }
+
+  .githubstatus-extension-link > button {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
