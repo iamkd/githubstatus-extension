@@ -1,5 +1,40 @@
+// Query the status and update the nodes directly.
+// A bit messy but without webpack, React, Next.js, Kubernetes, and serverless
+function pollStatusAndUpdate(component) {
+  fetch("https://www.githubstatus.com/api/v2/status.json")
+    .then((res) => res.json())
+    .then((data) => {
+      const { url } = data.page;
+      const { indicator, description } = data.status;
+
+      component.icon.classList.remove("none", "minor", "major");
+      switch (indicator) {
+        case "none":
+          component.icon.classList.add("none");
+          break;
+        case "minor":
+          component.icon.classList.add("minor");
+          break;
+        case "major":
+        case "critical":
+          component.icon.classList.add("major");
+          break;
+        default:
+      }
+
+      component.text.innerText = description;
+
+      component.link.href = url;
+      component.link.classList.add("visible");
+    })
+    .catch(() => {
+      // Silently fail
+    });
+}
+
 function createButton(className) {
   const link = document.createElement("a");
+  link.id = "githubstatus-extension";
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   link.classList.add("githubstatus-extension-link");
@@ -21,71 +56,63 @@ function createButton(className) {
 
   link.appendChild(button);
 
-  fetch("https://www.githubstatus.com/api/v2/status.json")
-    .then((res) => res.json())
-    .then((data) => {
-      const { url } = data.page;
-      link.href = url;
-
-      const { indicator, description } = data.status;
-
-      switch (indicator) {
-        case "none":
-          icon.classList.add("none");
-          break;
-        case "minor":
-          icon.classList.add("minor");
-          break;
-        case "major":
-        case "critical":
-          icon.classList.add("major");
-          break;
-        default:
-      }
-
-      text.innerText = description;
-
-      link.classList.add("visible");
-    })
-    .catch(() => {
-      // Silently fail
-    });
-
-  return link;
+  return { link, text, icon };
 }
 
+// Try to safely append the button to the header in a few different ways
 const targets = [
   () => {
     try {
       const container = document.querySelector(
         "header.AppHeader > div.AppHeader-globalBar > div.AppHeader-globalBar-start"
       );
-      container.appendChild(createButton());
+      const component = createButton();
+      container.appendChild(component.link);
+
+      return component;
     } catch {
       return false;
     }
-
-    return true;
   },
   () => {
     try {
       const container = document.querySelector(
         "header.Header > div.Header-item.Header-item--full"
       );
-      container.parentNode.insertBefore(
-        createButton("padded"),
-        container.nextSibling
-      );
+      const component = createButton("padded");
+      container.parentNode.insertBefore(component.link, container.nextSibling);
+
+      return component;
     } catch {
       return false;
     }
-
-    return true;
   },
 ];
 
-for (const insert of targets) {
-  if (insert()) {
-    break;
+let interval = null;
+
+function run() {
+  const currentNode = document.getElementById("githubstatus-extension");
+  if (currentNode) {
+    return;
+  }
+
+  for (const insert of targets) {
+    const component = insert();
+    if (component) {
+      currentComponent = component;
+
+      pollStatusAndUpdate(component);
+
+      if (interval) {
+        clearInterval(interval);
+      }
+      interval = setInterval(() => pollStatusAndUpdate(component), 30000);
+
+      break;
+    }
   }
 }
+
+// Using Github's turbo:load event to handle navigation
+document.documentElement.addEventListener("turbo:load", run);
