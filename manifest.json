@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Github Status Monitor",
-  "description": "View Github status on every page because it's down too often.",
+  "name": "GitHub Status Monitor",
+  "description": "View GitHub status on every page because it's down too often.",
   "version": "1.1",
   "content_scripts": [
     {

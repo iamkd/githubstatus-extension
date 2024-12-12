@@ -114,5 +114,5 @@ function run() {
   }
 }
 
-// Using Github's turbo:load event to handle navigation
+// Using GitHub's turbo:load event to handle navigation
 document.documentElement.addEventListener("turbo:load", run);
