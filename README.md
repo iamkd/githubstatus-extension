@@ -1,4 +1,4 @@
-# Render current Github Status right in the header.
+# Render current GitHub Status right in the header.
 
 <img width="335" alt="image" src="https://github.com/iamkd/githubstatus-extension/assets/3995561/8a0676ee-be2c-4a8c-aa0a-77e1b43b093d">
 
