@@ -61,58 +61,128 @@ function createButton(className) {
 
 // Try to safely append the button to the header in a few different ways
 const targets = [
-  () => {
-    try {
-      const container = document.querySelector(
-        "header.AppHeader > div.AppHeader-globalBar > div.AppHeader-globalBar-start"
-      );
-      const component = createButton();
-      container.appendChild(component.link);
-
-      return component;
-    } catch {
+  (component) => {
+    const container = document.querySelector(
+      "header div[data-testid='top-nav-center']",
+    );
+    const firstChild = container && container.firstElementChild;
+    if (!container || !firstChild) {
       return false;
     }
+
+    component.link.classList.remove("padded");
+    container.insertBefore(component.link, firstChild.nextSibling);
+    return true;
   },
-  () => {
-    try {
-      const container = document.querySelector(
-        "header.Header > div.Header-item.Header-item--full"
-      );
-      const component = createButton("padded");
-      container.parentNode.insertBefore(component.link, container.nextSibling);
-
-      return component;
-    } catch {
+  (component) => {
+    const container = document.querySelector(
+      "header.AppHeader > div.AppHeader-globalBar > div.AppHeader-globalBar-start",
+    );
+    if (!container) {
       return false;
     }
+
+    component.link.classList.remove("padded");
+    container.appendChild(component.link);
+    return true;
+  },
+  (component) => {
+    const container = document.querySelector(
+      "header.Header > div.Header-item.Header-item--full",
+    );
+    if (!container || !container.parentNode) {
+      return false;
+    }
+
+    component.link.classList.add("padded");
+    container.parentNode.insertBefore(component.link, container.nextSibling);
+    return true;
   },
 ];
 
+let currentComponent = null;
 let interval = null;
+let observer = null;
+let remountCheckScheduled = false;
 
-function run() {
-  const currentNode = document.getElementById("githubstatus-extension");
-  if (currentNode) {
+function getOrCreateComponent() {
+  if (!currentComponent) {
+    currentComponent = createButton();
+  }
+  return currentComponent;
+}
+
+function ensureMounted() {
+  const component = getOrCreateComponent();
+  if (component.link.isConnected) {
+    return true;
+  }
+
+  for (const mount of targets) {
+    try {
+      if (mount(component)) {
+        return true;
+      }
+    } catch {
+      // Try the next target
+    }
+  }
+
+  return false;
+}
+
+function pollCurrentStatus() {
+  if (!ensureMounted()) {
     return;
   }
 
-  for (const insert of targets) {
-    const component = insert();
-    if (component) {
-      currentComponent = component;
+  pollStatusAndUpdate(currentComponent);
+}
 
-      pollStatusAndUpdate(component);
-
-      if (interval) {
-        clearInterval(interval);
-      }
-      interval = setInterval(() => pollStatusAndUpdate(component), 30000);
-
-      break;
-    }
+function ensurePolling() {
+  if (interval) {
+    return;
   }
+
+  interval = setInterval(() => {
+    pollCurrentStatus();
+  }, 30000);
+}
+
+function scheduleRemountCheck() {
+  if (remountCheckScheduled) {
+    return;
+  }
+
+  remountCheckScheduled = true;
+  setTimeout(() => {
+    remountCheckScheduled = false;
+    ensureMounted();
+  }, 0);
+}
+
+function ensureObserver() {
+  if (observer) {
+    return;
+  }
+
+  observer = new MutationObserver(() => {
+    if (!currentComponent || !currentComponent.link.isConnected) {
+      scheduleRemountCheck();
+    }
+  });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+function run() {
+  ensureObserver();
+  ensurePolling();
+  pollCurrentStatus();
 }
 
 // Using Github's turbo:load event to handle navigation
 document.documentElement.addEventListener("turbo:load", run);
+run();
